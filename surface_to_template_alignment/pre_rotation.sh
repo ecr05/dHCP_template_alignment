@@ -11,9 +11,6 @@ out_doftxt=$(echo $out_dof | sed 's/\.dof/\.txt/g')
 
 echo newnames $out_dof $out_doftxt $intermediate_sphere
 
-# define fixed variables
-#vol_template=/vol/medic01/users/ecr05/dHCP_processing/TEMPLATES/andreas_v1/templates/t2w/t40.00.nii.gz
-
 echo /vol/medic01/users/ecr05/software/MIRTK/BUILD/bin/mirtk register $vol_template $in_volume  -model Rigid -sim NMI -bins 64 -dofout $out_dof
 
 if [ ! -f $out_doftxt ]; then

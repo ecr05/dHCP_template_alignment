@@ -8,8 +8,9 @@
 
 
 Usage() {
-    echo "estimate_pre_rotations.sh <MNI surf> < MNI data> <target surf> <target  data> <outdir> <config>"
+    echo "estimate_pre_rotations.sh <MSM bin> <MNI surf> < MNI data> <target surf> <target  data> <outdir> <config>"
     echo " input args: "
+    echo " MSM bin : path to msm binary"
     echo " MNI surf : sphere in MNI space (i.e. old surface template) with wildcard %age% and %hemi% (template age and hemisphere)"
     echo " MNI data : sulc data in MNI space (i.e. for old surface template) with wildcard %age% and %hemi% "
     echo " target surf : target sphere in FS_LR space (i.e. new surface template) with wildcard %age% and %hemi% (template age and hemisphere)"
@@ -19,6 +20,13 @@ Usage() {
     echo " ages : list of template ages to be processed "
 }
 
+if [ "$#" -lt 8  ]; then
+echo "$#" 
+   Usage
+   exit
+fi
+
+MSMBIN=$1;shift
 inputsphere=$1;shift
 inputdata=$1;shift
 templatesphere=$1;shift
@@ -39,15 +47,15 @@ for (( i=0; i< ${#ages[@]} ;i++ )); do
 	refmesh=$(echo $templatesphere | sed "s/%hemi%/$hemi/g" |sed "s/%age%/$age/g" )
 	refdata=$(echo $templatedata | sed "s/%hemi%/$hemi/g" | sed "s/%age%/$age/g")
 
-	if [ ! -f ${outdir}/Registrations/week${age}.oldTOnew.aff.nonlin.L.sphere.reg.surf.gii ]; then
-	    echo msm --levels=2 --conf=$config --inmesh=$inmesh --refmesh=$refmesh --indata=$indata --refdata=$refdata --out=${outdir}/Registrations/week${age}.oldTOnew.aff.nonlin.L. --verbose
+	if [ ! -f ${outdir}/Registrations/week${age}.oldTOnew.aff.nonlin.$hemi.sphere.reg.surf.gii ]; then
+	    echo ${MSMBIN} --levels=2 --conf=$config --inmesh=$inmesh --refmesh=$refmesh --indata=$indata --refdata=$refdata --out=${outdir}/Registrations/week${age}.oldTOnew.aff.nonlin.${hemi}. --verbose
 	    
-	    msm --levels=2 --conf=$config --inmesh=$inmesh --refmesh=$refmesh --indata=$indata --refdata=$refdata --out=${outdir}/Registrations/week${age}.oldTOnew.aff.nonlin.L. --verbose
+	    ${MSMBIN} --levels=2 --conf=$config --inmesh=$inmesh --refmesh=$refmesh --indata=$indata --refdata=$refdata --out=${outdir}/Registrations/week${age}.oldTOnew.aff.nonlin.${hemi}. --verbose
 	fi
 
-	echo wb_command -surface-affine-regression $inmesh ${outdir}/Registrations/week${age}.oldTOnew.aff.nonlin.L.sphere.reg.surf.gii ${outdir}/week${age}_toFS_LR_affine.${hemi}.txt
+	echo wb_command -surface-affine-regression $inmesh ${outdir}/Registrations/week${age}.oldTOnew.aff.nonlin.${hemi}.sphere.reg.surf.gii ${outdir}/week${age}_toFS_LR_affine.${hemi}.txt
 
-	wb_command -surface-affine-regression $inmesh ${outdir}/Registrations/week${age}.oldTOnew.aff.nonlin.L.sphere.reg.surf.gii ${outdir}/week${age}_toFS_LR_affine.${hemi}.txt
+	wb_command -surface-affine-regression $inmesh ${outdir}/Registrations/week${age}.oldTOnew.aff.nonlin.${hemi}.sphere.reg.surf.gii ${outdir}/week${age}_toFS_LR_affine.${hemi}.txt
 
 	rotation_file=${outdir}/week${age}_toFS_LR_rot.${hemi}.txt 
 	
