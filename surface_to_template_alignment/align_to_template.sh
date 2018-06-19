@@ -93,6 +93,7 @@ for hemi in L R; do
     fi
 
     if [ ! -f ${outname}sphere.reg.surf.gii ]; then
+	echo  ${MSMBIN}  --conf=${config}  --inmesh=${inmesh}  --refmesh=${refmesh} --indata=${indata} --refdata=${refdata} --out=${outname} --verbose
 	 ${MSMBIN}  --conf=${config}  --inmesh=${inmesh}  --refmesh=${refmesh} --indata=${indata} --refdata=${refdata} --out=${outname} --verbose
     fi
 
