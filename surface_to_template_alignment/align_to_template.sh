@@ -135,6 +135,7 @@ for hemi in left right; do
 	${WB_BIN} -metric-resample $nativedir/sub-${subjid}_ses-${session}_${hemi}_${metric}.shape.gii $transformed_sphere $template ADAP_BARY_AREA $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_${metric}.32k_fs_LR.shape.gii -area-surfs $nativedir/sub-${subjid}_ses-${session}_${hemi}_white.surf.gii  $template_areal
     done
 
+    ${WB_BIN} -label-resample $nativedir/sub-${subjid}_ses-${session}_${hemi}_drawem.label.gii $transformed_sphere $template ADAP_BARY_AREA $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_drawem.label.gii -area-surfs $nativedir/sub-${subjid}_ses-${session}_${hemi}_white.surf.gii  $template_areal
 done
 		    
 
