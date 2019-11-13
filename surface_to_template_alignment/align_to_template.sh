@@ -109,6 +109,12 @@ nativedir=${topdir}/sub-${subjid}/ses-$session/anat/Native
 fs_LRdir=${topdir}/sub-${subjid}/ses-$session/anat/fsaverage_LR32k
 
 for hemi in left right; do
+
+    # first copy the template sphere to the subjects fsaverage_LR32k 
+    # Each subject's template space sphere IS the template! following HCP form.
+    refmesh=$(echo $templatesphere | sed "s/%hemi%/$hemi/g")
+    cp $refmesh $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_sphere.32k_fs_LR.surf.gii	
+    
     transformed_sphere=$outdir/surface_transforms/sub-${subjid}_ses-${session}_${hemi}_sphere.reg.surf.gii
     
     if [ "$hemi" == "left" ]; then
@@ -120,7 +126,7 @@ for hemi in left right; do
     fi
 
     # resample surfaces
-    for surf in pial white midthickness sphere inflated very_inflated; do	
+    for surf in pial white midthickness inflated very_inflated; do	
 	${WB_BIN} -surface-resample $nativedir/sub-${subjid}_ses-${session}_${hemi}_${surf}.surf.gii $transformed_sphere $template ADAP_BARY_AREA $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_${surf}.32k_fs_LR.surf.gii -area-surfs $nativedir/sub-${subjid}_ses-${session}_${hemi}_white.surf.gii  $template_areal
      done
 		
