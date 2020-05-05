@@ -20,6 +20,7 @@ Usage() {
     echo " config : base config file "
     echo " MSM bin: msm binary"
     echo " wb bin : workbench binary"
+    echo "mirtk bin : mirtk binary "
     echo "output: 1) surface registrations; 2)  native giftis resampled with template topology "
 }
 
@@ -41,6 +42,7 @@ outdir=$1; shift
 config=$1; shift
 MSMBIN=$1; shift
 WB_BIN=$1; shift
+mirtk_BIN=$1; shift
 
 mkdir -p $outdir $outdir/volume_dofs $outdir/surface_transforms
 
@@ -69,9 +71,9 @@ pre_rotationR=$(echo ${pre_rotation} |  sed "s/%hemi%/R/g")
 
 
 # rotate left and right hemispheres into approximate alignment with MNI space
-echo ${SURF2TEMPLATE}/surface_to_template_alignment/pre_rotation.sh $native_volume $native_sphereL $templatevolume $pre_rotationL $outdir/volume_dofs/${subjid}-${session}.dof ${native_rot_sphereL}
-${SURF2TEMPLATE}/surface_to_template_alignment/pre_rotation.sh $native_volume $native_sphereL $templatevolume $pre_rotationL $outdir/volume_dofs/${subjid}-${session}.dof ${native_rot_sphereL}
-${SURF2TEMPLATE}/surface_to_template_alignment/pre_rotation.sh $native_volume $native_sphereR $templatevolume $pre_rotationR $outdir/volume_dofs/${subjid}-${session}.dof ${native_rot_sphereR}
+echo ${SURF2TEMPLATE}/surface_to_template_alignment/pre_rotation.sh $native_volume $native_sphereL $templatevolume $pre_rotationL $outdir/volume_dofs/${subjid}-${session}.dof ${native_rot_sphereL} $mirtk_BIN $WB_BIN
+${SURF2TEMPLATE}/surface_to_template_alignment/pre_rotation.sh $native_volume $native_sphereL $templatevolume $pre_rotationL $outdir/volume_dofs/${subjid}-${session}.dof ${native_rot_sphereL}  $mirtk_BIN $WB_BIN
+${SURF2TEMPLATE}/surface_to_template_alignment/pre_rotation.sh $native_volume $native_sphereR $templatevolume $pre_rotationR $outdir/volume_dofs/${subjid}-${session}.dof ${native_rot_sphereR}  $mirtk_BIN $WB_BIN
 
 
 # run msm non linear alignment to template for left and right hemispheres
@@ -112,7 +114,14 @@ for hemi in left right; do
 
     # first copy the template sphere to the subjects fsaverage_LR32k 
     # Each subject's template space sphere IS the template! following HCP form.
-    refmesh=$(echo $templatesphere | sed "s/%hemi%/$hemi/g")
+
+    if [ "$hemi" == "left" ]; then
+	refmesh=$(echo $templatesphere | sed "s/%hemi%/L/g")
+    else
+	refmesh=$(echo $templatesphere | sed "s/%hemi%/R/g")
+    fi
+
+    echo  cp $refmesh $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_sphere.32k_fs_LR.surf.gii
     cp $refmesh $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_sphere.32k_fs_LR.surf.gii	
     
     transformed_sphere=$outdir/surface_transforms/sub-${subjid}_ses-${session}_${hemi}_sphere.reg.surf.gii
