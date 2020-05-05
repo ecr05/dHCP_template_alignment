@@ -2,7 +2,8 @@
 
 # script to align native surfaces with template space & resample native surfaces with template topology 
 # output: native giftis resampled with template topology
-
+dir=$(pwd)
+SURF2TEMPLATE=$(dirname $dir)
 
 Usage() {
     echo "align_to_template.sh <topdir> <subjid> <session> <template volume> <template sphere> <template  data> <pre_rotation> <outdir>  <config> < MSM bin> <wb bin>"
@@ -121,7 +122,6 @@ for hemi in left right; do
 	refmesh=$(echo $templatesphere | sed "s/%hemi%/R/g")
     fi
 
-    echo  cp $refmesh $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_sphere.32k_fs_LR.surf.gii
     cp $refmesh $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_sphere.32k_fs_LR.surf.gii	
     
     transformed_sphere=$outdir/surface_transforms/sub-${subjid}_ses-${session}_${hemi}_sphere.reg.surf.gii
