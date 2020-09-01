@@ -1,24 +1,22 @@
 #!/bin/bash
 
-# script to align native surfaces with template space & resample native surfaces with template topology 
+# script to align native surfaces with template space & resample native surfaces with template topology
 # output: native giftis resampled with template topology
-dir=$(pwd)
-SURF2TEMPLATE=$(dirname $dir)
 
 Usage() {
-    echo "align_to_template.sh <topdir> <subjid> <session> <template volume> <template sphere> <template  data> <pre_rotation> <outdir>  <config> < MSM bin> <wb bin>"
+    echo "align_to_template.sh <topdir> <subjid> <session> <age> <volumetric template> <surface template> <pre_rotation> <outdir>  <config> <script dir> < MSM bin> <wb bin>"
     echo " script to align native surfaces with template space & resample native surfaces with template topology "
     echo " input args: "
     echo " topdir: top directory where subject directories are located "
     echo " subjid : subject id "
     echo " session: subject scan session "
-    echo " template volume: template T2 volume "
-    echo " template sphere: template sphere.surf.gii (with wildcard %hemi% in place of hemisphere) "
-    echo " template anat: template anatomy file i.e. white or midthickness.surf.gii (with wildcard %hemi% in place of hemisphere) "
-    echo " template data : template sulc.shape.gii (with wildcard %hemi% in place of hemisphere) "
+    echo " age: in weeks gestation - this will determine which week of the spatio-temporal template the data will first mapped to"
+    echo " template volume: template T2 40 week volume "
+    echo " surface template: path to the top level directory of the dHCP surface template"
     echo " pre_rotation : txt file containing rotational transform between MNI and FS_LR space (i.e. file rotational_transforms/week40_toFS_LR_rot.%hemi%.txt  ) "
     echo " outdir : base directory where output will be sent "
     echo " config : base config file "
+    echo " script dir: path to scripts"
     echo " MSM bin: msm binary"
     echo " wb bin : workbench binary"
     echo "mirtk bin : mirtk binary "
@@ -26,7 +24,7 @@ Usage() {
 }
 
 if [ "$#" -lt 11  ]; then
-echo "$#" 
+echo "$#"
    Usage
    exit
 fi
@@ -34,22 +32,22 @@ fi
 topdir=$1;shift
 subjid=$1;shift
 session=$1;shift
+age=$1;shift
 templatevolume=$1;shift
-templatesphere=$1;shift
-templateanat=$1;shift
-templatedata=$1;shift
+templatespherepath=$1;shift
 pre_rotation=$1;shift
 outdir=$1; shift
 config=$1; shift
+SURF2TEMPLATE=$1;shift
 MSMBIN=$1; shift
 WB_BIN=$1; shift
 mirtk_BIN=$1; shift
 
 mkdir -p $outdir $outdir/volume_dofs $outdir/surface_transforms
 
-# define paths to variables
+############# define paths to variables #######################
 
-native_volume=${topdir}/sub-${subjid}/ses-$session/anat/sub-${subjid}_ses-${session}_T2w_restore_brain.nii.gz 
+native_volume=${topdir}/sub-${subjid}/ses-$session/anat/sub-${subjid}_ses-${session}_T2w_restore_brain.nii.gz
 
 # native spheres
 native_sphereL=${topdir}/sub-${subjid}/ses-$session/anat/Native/sub-${subjid}_ses-${session}_left_sphere.surf.gii
@@ -61,10 +59,15 @@ echo native spheres $native_sphere_L $native_sphere_R
 native_rot_sphereL=${topdir}/sub-${subjid}/ses-$session/anat/Native/sub-${subjid}_ses-${session}_left_sphere.rot.surf.gii
 native_rot_sphereR=${topdir}/sub-${subjid}/ses-$session/anat/Native/sub-${subjid}_ses-${session}_right_sphere.rot.surf.gii
 
-
 # native data
 native_dataL=${topdir}/sub-${subjid}/ses-$session/anat/Native/sub-${subjid}_ses-${session}_left_sulc.shape.gii
 native_dataR=${topdir}/sub-${subjid}/ses-$session/anat/Native/sub-${subjid}_ses-${session}_right_sulc.shape.gii
+
+# surface template files - assumes directory structure consistent with dHCP surface template
+templatesphereL=$templatespherepath/dHCP.week${age}.L.sphere.surf.gii
+templatesphereR=$templatespherepath/dHCP.week${age}.R.sphere.surf.gii
+templatedataL=$templatespherepath/dHCP.week${age}.L.sulc.shape.gii
+templatedataR=$templatespherepath/dHCP.week${age}.R.sulc.shape.gii
 
 # pre-rotations
 pre_rotationL=$(echo ${pre_rotation} |  sed "s/%hemi%/L/g")
@@ -80,28 +83,33 @@ ${SURF2TEMPLATE}/surface_to_template_alignment/pre_rotation.sh $native_volume $n
 # run msm non linear alignment to template for left and right hemispheres
 
 for hemi in L R; do
-    
-    refmesh=$(echo $templatesphere | sed "s/%hemi%/$hemi/g")
-    refdata=$(echo $templatedata | sed "s/%hemi%/$hemi/g")
 
     if [ "$hemi" == "L" ]; then
        inmesh=$native_rot_sphereL
+       refmesh=$templatesphereL
+       refdata=$templatedataL
        indata=$native_dataL
        outname=$outdir/surface_transforms/sub-${subjid}_ses-${session}_left_
 
     else
        inmesh=$native_rot_sphereR
+       refmesh=$templatesphereR
        indata=$native_dataR
+       refdata=$templatedataR
        outname=$outdir/surface_transforms/sub-${subjid}_ses-${session}_right_
     fi
 
     if [ ! -f ${outname}sphere.reg.surf.gii ]; then
-	echo  ${MSMBIN}  --conf=${config}  --inmesh=${inmesh}  --refmesh=${refmesh} --indata=${indata} --refdata=${refdata} --out=${outname} --verbose
-	 ${MSMBIN}  --conf=${config}  --inmesh=${inmesh}  --refmesh=${refmesh} --indata=${indata} --refdata=${refdata} --out=${outname} --verbose
+	     echo  ${MSMBIN}  --conf=${config}  --inmesh=${inmesh}  --refmesh=${refmesh} --indata=${indata} --refdata=${refdata} --out=${outname} --verbose
+	      ${MSMBIN}  --conf=${config}  --inmesh=${inmesh}  --refmesh=${refmesh} --indata=${indata} --refdata=${refdata} --out=${outname} --verbose
     fi
 
-    cp ${outname}sphere.reg.surf.gii ${topdir}/sub-${subjid}/ses-$session/anat/Native/
-    
+    # need to concatenate msm warp to local template with warp from local template to 40 week template
+    ${WB_BIN} -surface-sphere-project-unproject ${outname}sphere.reg.surf.gii ${refmesh} ${SURF2TEMPLATE}/dHCP_between_template_warps/${age}-to-40.MSMSulc.sphere.reg.surf.gii ${outname}sphere.reg40.surf.gii
+
+    # the output sphere represents the full warp from Native to 40 week template space - save this
+    cp ${outname}sphere.reg40.surf.gii ${topdir}/sub-${subjid}/ses-$session/anat/Native/
+
 done
 
 # now resample template topology on native surfaces - output in fsaverage_LR32k directory
@@ -113,45 +121,36 @@ fs_LRdir=${topdir}/sub-${subjid}/ses-$session/anat/fsaverage_LR32k
 
 for hemi in left right; do
 
-    # first copy the template sphere to the subjects fsaverage_LR32k 
+    # first copy the template sphere to the subjects fsaverage_LR32k
     # Each subject's template space sphere IS the template! following HCP form.
 
     if [ "$hemi" == "left" ]; then
-	refmesh=$(echo $templatesphere | sed "s/%hemi%/L/g")
+	     template=$templatespherepath/dHCP.week40.L.sphere.surf.gii
+       templatewhite=$templatespherepath/dHCP.week40.L.white.surf.gii
     else
-	refmesh=$(echo $templatesphere | sed "s/%hemi%/R/g")
+	     template=$templatespherepath/dHCP.week40.R.sphere.surf.gii
+       templatewhite=$templatespherepath/dHCP.week40.R.white.surf.gii
     fi
 
-    cp $refmesh $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_sphere.32k_fs_LR.surf.gii	
-    
-    transformed_sphere=$outdir/surface_transforms/sub-${subjid}_ses-${session}_${hemi}_sphere.reg.surf.gii
-    
-    if [ "$hemi" == "left" ]; then
-	template=$(echo $templatesphere | sed "s/%hemi%/L/g")
-	template_areal=$(echo $templateanat | sed "s/%hemi%/L/g")
-    else
-        template=$(echo $templatesphere | sed "s/%hemi%/R/g")
-	template_areal=$(echo $templateanat | sed "s/%hemi%/R/g")
-    fi
+    cp $template $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_sphere.32k_fs_LR.surf.gii
+
+    transformed_sphere=$outdir/surface_transforms/sub-${subjid}_ses-${session}_${hemi}_sphere.reg40.surf.gii
 
     # resample surfaces
-    for surf in pial white midthickness inflated very_inflated; do	
-	${WB_BIN} -surface-resample $nativedir/sub-${subjid}_ses-${session}_${hemi}_${surf}.surf.gii $transformed_sphere $template ADAP_BARY_AREA $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_${surf}.32k_fs_LR.surf.gii -area-surfs $nativedir/sub-${subjid}_ses-${session}_${hemi}_white.surf.gii  $template_areal
+    for surf in pial white midthickness inflated very_inflated; do
+	   ${WB_BIN} -surface-resample $nativedir/sub-${subjid}_ses-${session}_${hemi}_${surf}.surf.gii $transformed_sphere $template ADAP_BARY_AREA $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_${surf}.32k_fs_LR.surf.gii -area-surfs $nativedir/sub-${subjid}_ses-${session}_${hemi}_white.surf.gii  $templatewhite
      done
-		
+
      # resample .func metrics
-		
+
     for metric in myelin_map smoothed_myelin_map ; do
-	${WB_BIN} -metric-resample $nativedir/sub-${subjid}_ses-${session}_${hemi}_${metric}.func.gii $transformed_sphere $template ADAP_BARY_AREA $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_${metric}.32k_fs_LR.func.gii -area-surfs $nativedir/sub-${subjid}_ses-${session}_${hemi}_white.surf.gii  $template_areal
+	     ${WB_BIN} -metric-resample $nativedir/sub-${subjid}_ses-${session}_${hemi}_${metric}.func.gii $transformed_sphere $template ADAP_BARY_AREA $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_${metric}.32k_fs_LR.func.gii -area-surfs $nativedir/sub-${subjid}_ses-${session}_${hemi}_white.surf.gii  $templatewhite
     done
-    
+
     # resample .shape metrics
     for metric in sulc curvature thickness corr_thickness ; do
-	${WB_BIN} -metric-resample $nativedir/sub-${subjid}_ses-${session}_${hemi}_${metric}.shape.gii $transformed_sphere $template ADAP_BARY_AREA $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_${metric}.32k_fs_LR.shape.gii -area-surfs $nativedir/sub-${subjid}_ses-${session}_${hemi}_white.surf.gii  $template_areal
+	     ${WB_BIN} -metric-resample $nativedir/sub-${subjid}_ses-${session}_${hemi}_${metric}.shape.gii $transformed_sphere $template ADAP_BARY_AREA $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_${metric}.32k_fs_LR.shape.gii -area-surfs $nativedir/sub-${subjid}_ses-${session}_${hemi}_white.surf.gii  $templatewhite
     done
 
-    ${WB_BIN} -label-resample $nativedir/sub-${subjid}_ses-${session}_${hemi}_drawem.label.gii $transformed_sphere $template ADAP_BARY_AREA $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_drawem.label.gii -area-surfs $nativedir/sub-${subjid}_ses-${session}_${hemi}_white.surf.gii  $template_areal
+    ${WB_BIN} -label-resample $nativedir/sub-${subjid}_ses-${session}_${hemi}_drawem.label.gii $transformed_sphere $template ADAP_BARY_AREA $fs_LRdir/sub-${subjid}_ses-${session}_${hemi}_drawem.label.gii -area-surfs $nativedir/sub-${subjid}_ses-${session}_${hemi}_white.surf.gii  $templatewhite
 done
-		    
-
-
