@@ -75,15 +75,15 @@ native_dataL=${topdir}/sub-${subjid}/ses-$session/anat/Native/sub-${subjid}_ses-
 native_dataR=${topdir}/sub-${subjid}/ses-$session/anat/Native/sub-${subjid}_ses-${session}_hemi-right_sulc.shape.gii
 
 # surface template files - assumes directory structure consistent with dHCP surface template
-echo templatesphereL=$templatespherepath/week-40_hemi-left_space-dhcpSym_dens-32k_sphere.surf.gii
-echo templatesphereR=$templatespherepath/week-40_hemi-right_space-dhcpSym_dens-32k_sphere.surf.gii
-echo templatedataL=$templatespherepath/week-40_hemi-left_space-dhcpSym_dens-32k_sulc.shape.gii 
-echo templatedataR=$templatespherepath/week-40_hemi-right_space-dhcpSym_dens-32k_sulc.shape.gii 
+echo templatesphereL=$templatespherepath/week-${age}_hemi-left_space-dhcpSym_dens-32k_sphere.surf.gii
+echo templatesphereR=$templatespherepath/week-${age}_hemi-right_space-dhcpSym_dens-32k_sphere.surf.gii
+echo templatedataL=$templatespherepath/week-${age}_hemi-left_space-dhcpSym_dens-32k_sulc.shape.gii 
+echo templatedataR=$templatespherepath/week-${age}_hemi-right_space-dhcpSym_dens-32k_sulc.shape.gii 
 
-templatesphereL=$templatespherepath/week-40_hemi-left_space-dhcpSym_dens-32k_sphere.surf.gii
-templatesphereR=$templatespherepath/week-40_hemi-right_space-dhcpSym_dens-32k_sphere.surf.gii
-templatedataL=$templatespherepath/week-40_hemi-left_space-dhcpSym_dens-32k_sulc.shape.gii
-templatedataR=$templatespherepath/week-40_hemi-right_space-dhcpSym_dens-32k_sulc.shape.gii 
+templatesphereL=$templatespherepath/week-${age}_hemi-left_space-dhcpSym_dens-32k_sphere.surf.gii
+templatesphereR=$templatespherepath/week-${age}_hemi-right_space-dhcpSym_dens-32k_sphere.surf.gii
+templatedataL=$templatespherepath/week-${age}_hemi-left_space-dhcpSym_dens-32k_sulc.shape.gii
+templatedataR=$templatespherepath/week-${age}_hemi-right_space-dhcpSym_dens-32k_sulc.shape.gii 
 
 # pre-rotations
 echo pre_rotationL=$(echo ${pre_rotation} |  sed "s/%hemi%/L/g")
@@ -125,11 +125,25 @@ for hemi in left right; do
 
     if [ ! -f ${outname}sphere.reg.surf.gii ]; then
 	     echo  ${MSMBIN} --inmesh=${inmesh} --refmesh=${refmesh} --indata=${indata} --refdata=${refdata} -o ${outname} --conf=${config} --verbose
-	      #${MSMBIN} --inmesh=${inmesh} --refmesh=${refmesh} --indata=${indata} --refdata=${refdata} -o ${outname} --conf=${config}
+	      ${MSMBIN} --inmesh=${inmesh} --refmesh=${refmesh} --indata=${indata} --refdata=${refdata} -o ${outname} --conf=${config}
+    fi
+    
+    if [ "$age" != "40" ] ; then 
+    # need to concatenate msm warp to local template with warp from local template to 40 week template
+    echo ${WB_BIN} -surface-sphere-project-unproject ${outname}sphere.reg.surf.gii ${refmesh} $templatespherepath/week-to-40-registrations/${hemi}.${age}-to-40/${hemi}.${age}-to-40sphere.reg.surf.gii ${outname}sphere.reg40.surf.gii 
+
+	${WB_BIN} -surface-sphere-project-unproject ${outname}sphere.reg.surf.gii ${refmesh} $templatespherepath/week-to-40-registrations/${hemi}.${age}-to-40/${hemi}.${age}-to-40sphere.reg.surf.gii ${outname}sphere.reg40.surf.gii ### LZJW added hemi and changed filepath for between template ### 
+
+    # the output sphere represents the full warp from Native to 40 week template space - save this
+    cp ${outname}sphere.reg40.surf.gii ${topdir}/sub-${subjid}/ses-$session/anat/Native/
+
+    else
+
+    mv ${outname}sphere.reg.surf.gii ${outname}sphere.reg40.surf.gii
+
     fi
 
 done
-
 
 ########## RESAMPLE TEMPLATE TOPOLOGY ON NATIVE SURFACES - OUTPUT IN 'dhcpSym_32k' DIRECTORY ##########
 
@@ -165,7 +179,7 @@ for hemi in left right ; do
 	echo cp $template $dhcpSym_dir/sub-${subjid}_ses-${session}_hemi-${hemi}_space-dhcpSym_dens-32k_sphere.surf.gii
 	cp $template $dhcpSym_dir/sub-${subjid}_ses-${session}_hemi-${hemi}_space-dhcpSym_dens-32k_sphere.surf.gii 
 
-    transformed_sphere=$outdir/surface_transforms/sub-${subjid}_ses-${session}_hemi-${hemi}_from-native_to-dhcpSym40_dens-32k_mode-sphere.reg.surf.gii
+    transformed_sphere=$outdir/surface_transforms/sub-${subjid}_ses-${session}_hemi-${hemi}_from-native_to-dhcpSym40_dens-32k_mode-sphere.reg40.surf.gii
 
     # resample surfaces
     for surf in pial wm midthickness inflated vinflated; do
