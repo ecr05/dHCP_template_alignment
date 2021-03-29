@@ -64,10 +64,10 @@ native_dataL=${topdir}/sub-${subjid}/ses-$session/anat/Native/sub-${subjid}_ses-
 native_dataR=${topdir}/sub-${subjid}/ses-$session/anat/Native/sub-${subjid}_ses-${session}_right_sulc.shape.gii
 
 # surface template files - assumes directory structure consistent with dHCP surface template
-templatesphereL=$templatespherepath/dHCP.week${age}.L.sphere.surf.gii
-templatesphereR=$templatespherepath/dHCP.week${age}.R.sphere.surf.gii
-templatedataL=$templatespherepath/dHCP.week${age}.L.sulc.shape.gii
-templatedataR=$templatespherepath/dHCP.week${age}.R.sulc.shape.gii
+templatesphereL=$templatespherepath/dHCP.week40.L.sphere.surf.gii
+templatesphereR=$templatespherepath/dHCP.week40.R.sphere.surf.gii
+templatedataL=$templatespherepath/dHCP.week40.L.sulc.shape.gii
+templatedataR=$templatespherepath/dHCP.week40.R.sulc.shape.gii
 
 # pre-rotations
 pre_rotationL=$(echo ${pre_rotation} |  sed "s/%hemi%/L/g")
@@ -104,9 +104,7 @@ for hemi in L R; do
 	      ${MSMBIN}  --conf=${config}  --inmesh=${inmesh}  --refmesh=${refmesh} --indata=${indata} --refdata=${refdata} --out=${outname} --verbose
     fi
 
-    # need to concatenate msm warp to local template with warp from local template to 40 week template
-    ${WB_BIN} -surface-sphere-project-unproject ${outname}sphere.reg.surf.gii ${refmesh} ${SURF2TEMPLATE}/dHCP_between_template_warps/${age}-to-40.MSMSulc.sphere.reg.surf.gii ${outname}sphere.reg40.surf.gii
-
+    mv ${outname}sphere.reg.surf.gii ${outname}sphere.reg40.surf.gii
     # the output sphere represents the full warp from Native to 40 week template space - save this
     cp ${outname}sphere.reg40.surf.gii ${topdir}/sub-${subjid}/ses-$session/anat/Native/
 
