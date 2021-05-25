@@ -8,9 +8,6 @@ This needs to be done in three steps:
 2) Estimation of a non-linear transform between each surface's native space and template space using MSM
 3) Resampling of native surfaces into template surface topology (the FS_LR32k space) 
 
-# Environment Setup
-Before running any scripts please set an environment variable $SURF2TEMPLATE as the path to the top level of this directory
-
 # Pre-processing that has been done for you
 For the first step the rotational transformation between MNI space and HCP FS_LR space is given in the folder rotational_transforms. The scripts used to do this can be found (for reference) in the  pre_rotation folder
 
