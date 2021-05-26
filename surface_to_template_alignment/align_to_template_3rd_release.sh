@@ -51,8 +51,8 @@ echo native_volume=${topdir}/sub-${subjid}/ses-$session/anat/sub-${subjid}_ses-$
 native_volume=${topdir}/sub-${subjid}/ses-$session/anat/sub-${subjid}_ses-${session}_T2w.nii.gz
 
 # native spheres
-echo native_sphereL=${topdir}/sub-${subjid}/ses-${session}/anat/Native/sub-${subjid}_ses-${session}_left_sphere.surf.gii
-echo native_sphereR=${topdir}/sub-${subjid}/ses-${session}/anat/Native/sub-${subjid}_ses-${session}_right_sphere.surf.gii
+echo native_sphereL=${topdir}/sub-${subjid}/ses-${session}/anat/Native/sub-${subjid}_ses-${session}_hemi-left_sphere.surf.gii
+echo native_sphereR=${topdir}/sub-${subjid}/ses-${session}/anat/Native/sub-${subjid}_ses-${session}_hemi-right_sphere.surf.gii
 
 native_sphereL=${topdir}/sub-${subjid}/ses-${session}/anat/Native/sub-${subjid}_ses-${session}_hemi-left_sphere.surf.gii
 native_sphereR=${topdir}/sub-${subjid}/ses-${session}/anat/Native/sub-${subjid}_ses-${session}_hemi-right_sphere.surf.gii
