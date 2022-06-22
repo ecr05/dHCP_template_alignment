@@ -14,3 +14,6 @@ For the first step the rotational transformation between MNI space and HCP FS_LR
 # Running surface to template alignment
 
 Therefore, to run alignment to template, all that is required is to run the surface_to_template_alignment/align_to_template.sh script. This applies the rotation rotational_transforms/week40_toFS_LR_rot.L.txt (or rotational_transforms/week40_toFS_LR_rot.R.txt ) to the surfaces; then aligns non-linearly using MSM [1][2], before finally resampling all Native surfaces and data onto the template surface topology (creating a new data folder fsaverage_LR32k in the process)
+
+Note for non HCP data you may find the following script more stable surface_to_template_alignment/align_to_template_no_volumetric_initialisation.sh (inputs stay the same)  
+
